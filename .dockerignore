@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+
+# Keep .env.* files so the Dockerfile can copy the right one at build time.
+# Only ignore .env.local (used only for local dev, contains no secrets you want baked in).
+.env.local
