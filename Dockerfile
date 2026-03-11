@@ -20,18 +20,21 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Which environment to build for: local | staging | production (default: production)
-ARG APP_ENV=production
+# Pass your env vars as build args — no .env file needed on the server
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_NAME=MindNote
+ARG NEXT_PUBLIC_APP_ENV=production
+
+# Expose them as real ENV so Next.js bakes them into the build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+ENV NEXT_PUBLIC_APP_ENV=$NEXT_PUBLIC_APP_ENV
 
 # Copy installed deps
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source
 COPY . .
-
-# Copy the correct env file into .env.production so Next.js picks it up at build time.
-# Next.js always reads .env.production when NODE_ENV=production.
-COPY .env.${APP_ENV} .env.production
 
 # Build the Next.js application
 RUN pnpm run build
