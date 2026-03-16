@@ -12,6 +12,7 @@ import {
   CheckSquare,
   Search,
   Lightbulb,
+  MessageCircle,
   Settings,
   LogOut,
   Menu,
@@ -23,6 +24,7 @@ const navItems = [
   { icon: BookOpen, label: 'Notes', href: '/app/notes' },
   { icon: Clock, label: 'Reminders', href: '/app/reminders' },
   { icon: CheckSquare, label: 'Todos', href: '/app/todos' },
+  { icon: MessageCircle, label: 'Chat', href: '/app/chat' },
   { icon: Search, label: 'Search', href: '/app/search' },
   { icon: Lightbulb, label: 'Research', href: '/app/research' },
 ]

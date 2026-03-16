@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sidebar } from '@/components/app/sidebar'
 import { Header } from '@/components/app/header'
+import { NotificationManager } from '@/components/app/notification-manager'
 import { useAuthStore } from '@/lib/auth-store'
+import { useAppStore } from '@/lib/app-store'
 
 export default function AppLayout({
   children,
@@ -13,6 +15,7 @@ export default function AppLayout({
 }) {
   const router = useRouter()
   const { isAuthenticated, token, fetchMe } = useAuthStore()
+  const fetchAll = useAppStore((state) => state.fetchAll)
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
@@ -24,6 +27,9 @@ export default function AppLayout({
 
     // Validate the session against the backend
     fetchMe()
+      .then(() => {
+        fetchAll()
+      })
       .catch(() => {
         // Token is invalid/expired — redirect to login
         router.replace('/auth/login')
@@ -31,7 +37,7 @@ export default function AppLayout({
       .finally(() => {
         setIsChecking(false)
       })
-  }, [token, fetchMe, router])
+  }, [token, fetchMe, router, fetchAll])
 
   // Show nothing while checking session (avoids flash of content)
   if (isChecking || !isAuthenticated) {
@@ -48,6 +54,7 @@ export default function AppLayout({
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
+      <NotificationManager />
       <div className="flex-1 flex flex-col md:ml-64">
         <Header />
         <main className="flex-1 overflow-auto p-4 md:p-6">

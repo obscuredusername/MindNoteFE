@@ -1,11 +1,12 @@
 import { create } from 'zustand'
+import { api } from '@/lib/api'
 
 export interface Note {
   id: string
   title: string
   content: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   tags: string[]
 }
 
@@ -13,7 +14,7 @@ export interface Reminder {
   id: string
   title: string
   description: string
-  dueDate: Date
+  dueDate: string
   completed: boolean
   priority: 'low' | 'medium' | 'high'
 }
@@ -32,127 +33,113 @@ interface AppStore {
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
 
+  // Global Fetch
+  isLoading: boolean
+  fetchAll: () => Promise<void>
+
   // Notes
   notes: Note[]
   selectedNoteId: string | null
   setSelectedNoteId: (id: string | null) => void
-  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void
-  updateNote: (id: string, updates: Partial<Note>) => void
-  deleteNote: (id: string) => void
+  fetchNotes: () => Promise<void>
+  addNote: (note: Partial<Note>) => Promise<void>
+  updateNote: (id: string, updates: Partial<Note>) => Promise<void>
+  deleteNote: (id: string) => Promise<void>
 
   // Reminders
   reminders: Reminder[]
-  addReminder: (reminder: Omit<Reminder, 'id'>) => void
-  updateReminder: (id: string, updates: Partial<Reminder>) => void
-  deleteReminder: (id: string) => void
+  fetchReminders: () => Promise<void>
+  addReminder: (reminder: Partial<Reminder>) => Promise<void>
+  updateReminder: (id: string, updates: Partial<Reminder>) => Promise<void>
+  deleteReminder: (id: string) => Promise<void>
 
   // Todos
   todos: Todo[]
-  addTodo: (todo: Omit<Todo, 'id'>) => void
-  updateTodo: (id: string, updates: Partial<Todo>) => void
-  deleteTodo: (id: string) => void
+  fetchTodos: () => Promise<void>
+  addTodo: (todo: Partial<Todo>) => Promise<void>
+  updateTodo: (id: string, updates: Partial<Todo>) => Promise<void>
+  deleteTodo: (id: string) => Promise<void>
 }
 
-export const useAppStore = create<AppStore>((set) => ({
+export const useAppStore = create<AppStore>((set, get) => ({
   // Navigation
   sidebarOpen: true,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
-  // Notes
-  notes: [
-    {
-      id: '1',
-      title: 'Welcome to Mindnote',
-      content: '# Welcome to Mindnote\n\nStart capturing your thoughts here. Use markdown to format your notes.',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      tags: ['welcome'],
-    },
-  ],
-  selectedNoteId: '1',
-  setSelectedNoteId: (id) => set({ selectedNoteId: id }),
-  addNote: (note) => {
-    const newNote: Note = {
-      ...note,
-      id: Math.random().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  // Global Fetch
+  isLoading: false,
+  fetchAll: async () => {
+    set({ isLoading: true })
+    try {
+      await Promise.all([
+        get().fetchNotes(),
+        get().fetchReminders(),
+        get().fetchTodos()
+      ])
+    } finally {
+      set({ isLoading: false })
     }
-    set((state) => ({ notes: [newNote, ...state.notes] }))
   },
-  updateNote: (id, updates) => {
-    set((state) => ({
-      notes: state.notes.map((note) =>
-        note.id === id ? { ...note, ...updates, updatedAt: new Date() } : note
-      ),
-    }))
+
+  // Notes
+  notes: [],
+  selectedNoteId: null,
+  setSelectedNoteId: (id) => set({ selectedNoteId: id }),
+  fetchNotes: async () => {
+    const data = await api.get<Note[]>('/writer/notes')
+    set({ notes: data })
+    if (data.length > 0 && !get().selectedNoteId) {
+      set({ selectedNoteId: data[0].id })
+    }
   },
-  deleteNote: (id) => {
-    set((state) => ({
-      notes: state.notes.filter((note) => note.id !== id),
-      selectedNoteId: state.selectedNoteId === id ? null : state.selectedNoteId,
-    }))
+  addNote: async (note) => {
+    await api.post('/writer/notes', note)
+    await get().fetchNotes()
+  },
+  updateNote: async (id, updates) => {
+    await api.patch(`/writer/notes/${id}`, updates)
+    await get().fetchNotes()
+  },
+  deleteNote: async (id) => {
+    await api.delete(`/writer/notes/${id}`)
+    await get().fetchNotes()
   },
 
   // Reminders
-  reminders: [
-    {
-      id: '1',
-      title: 'Review notes',
-      description: 'Review and organize recent notes',
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      completed: false,
-      priority: 'high',
-    },
-  ],
-  addReminder: (reminder) => {
-    const newReminder: Reminder = {
-      ...reminder,
-      id: Math.random().toString(),
-    }
-    set((state) => ({ reminders: [newReminder, ...state.reminders] }))
+  reminders: [],
+  fetchReminders: async () => {
+    const data = await api.get<Reminder[]>('/writer/reminders')
+    set({ reminders: data })
   },
-  updateReminder: (id, updates) => {
-    set((state) => ({
-      reminders: state.reminders.map((reminder) =>
-        reminder.id === id ? { ...reminder, ...updates } : reminder
-      ),
-    }))
+  addReminder: async (reminder) => {
+    await api.post('/writer/reminders', reminder)
+    await get().fetchReminders()
   },
-  deleteReminder: (id) => {
-    set((state) => ({
-      reminders: state.reminders.filter((reminder) => reminder.id !== id),
-    }))
+  updateReminder: async (id, updates) => {
+    await api.patch(`/writer/reminders/${id}`, updates)
+    await get().fetchReminders()
+  },
+  deleteReminder: async (id) => {
+    await api.delete(`/writer/reminders/${id}`)
+    await get().fetchReminders()
   },
 
   // Todos
-  todos: [
-    {
-      id: '1',
-      title: 'Get started',
-      description: 'Explore Mindnote features',
-      status: 'in-progress',
-      priority: 'high',
-      boardId: 'default',
-    },
-  ],
-  addTodo: (todo) => {
-    const newTodo: Todo = {
-      ...todo,
-      id: Math.random().toString(),
-    }
-    set((state) => ({ todos: [newTodo, ...state.todos] }))
+  todos: [],
+  fetchTodos: async () => {
+    const data = await api.get<Todo[]>('/writer/todos')
+    set({ todos: data })
   },
-  updateTodo: (id, updates) => {
-    set((state) => ({
-      todos: state.todos.map((todo) =>
-        todo.id === id ? { ...todo, ...updates } : todo
-      ),
-    }))
+  addTodo: async (todo) => {
+    await api.post('/writer/todos', todo)
+    await get().fetchTodos()
   },
-  deleteTodo: (id) => {
-    set((state) => ({
-      todos: state.todos.filter((todo) => todo.id !== id),
-    }))
+  updateTodo: async (id, updates) => {
+    await api.patch(`/writer/todos/${id}`, updates)
+    await get().fetchTodos()
+  },
+  deleteTodo: async (id) => {
+    await api.delete(`/writer/todos/${id}`)
+    await get().fetchTodos()
   },
 }))

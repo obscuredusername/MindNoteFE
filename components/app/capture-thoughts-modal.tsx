@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Send, Mic, Square, Trash2 } from 'lucide-react'
 
+import { api } from '@/lib/api'
+import { useAppStore } from '@/lib/app-store'
+
 interface CaptureThoughtsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -18,7 +21,7 @@ export function CaptureThoughtsModal({ open, onOpenChange }: CaptureThoughtsModa
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [showRecording, setShowRecording] = useState(false)
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -81,28 +84,27 @@ export function CaptureThoughtsModal({ open, onOpenChange }: CaptureThoughtsModa
 
     setIsLoading(true)
     try {
-      const formData = new FormData()
-      formData.append('content', thought)
-      formData.append('timestamp', new Date().toISOString())
-      
+      const tzOffset = new Date().getTimezoneOffset()
       if (audioBlob) {
-        formData.append('audioFile', audioBlob, 'voice-note.webm')
+        const formData = new FormData()
+        formData.append('file', audioBlob, 'voice-note.webm')
+        formData.append('timezone_offset', tzOffset.toString())
+        await api.post('/ai/voice-command', formData)
+      } else {
+        await api.post('/ai/command', {
+          text: thought,
+          timezone_offset: tzOffset
+        })
       }
 
-      // Send to your backend endpoint
-      // Your backend will handle categorization (note, reminder, todo, etc)
-      const response = await fetch('/api/capture-thought', {
-        method: 'POST',
-        body: formData,
-      })
+      setThought('')
+      setAudioBlob(null)
+      setRecordingTime(0)
+      setShowRecording(false)
+      onOpenChange(false)
 
-      if (response.ok) {
-        setThought('')
-        setAudioBlob(null)
-        setRecordingTime(0)
-        setShowRecording(false)
-        onOpenChange(false)
-      }
+      // Refresh all data to show newly created items
+      useAppStore.getState().fetchAll()
     } catch (error) {
       console.error('Error capturing thought:', error)
     } finally {
@@ -125,7 +127,7 @@ export function CaptureThoughtsModal({ open, onOpenChange }: CaptureThoughtsModa
             Write or record what's on your mind. I'll organize it for you.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <Textarea
             placeholder="What's on your mind? Share your thoughts, ideas, reminders, or tasks..."
@@ -212,7 +214,7 @@ export function CaptureThoughtsModal({ open, onOpenChange }: CaptureThoughtsModa
               Add Voice Note
             </Button>
           )}
-          
+
           <div className="flex gap-2 justify-end">
             <Button
               variant="outline"

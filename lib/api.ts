@@ -7,7 +7,7 @@
  *   const res = await api.post('/users/signin', body)
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
 
 type RequestOptions = {
   headers?: Record<string, string>
@@ -26,8 +26,13 @@ async function request<T = unknown>(
       : null
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...options.headers,
+  }
+
+  const isFormData = body instanceof FormData
+
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json'
   }
 
   if (token) {
@@ -37,7 +42,7 @@ async function request<T = unknown>(
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: isFormData ? (body as any) : body ? JSON.stringify(body) : undefined,
     signal: options.signal,
   })
 

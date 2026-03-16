@@ -27,7 +27,7 @@ export default function RemindersPage() {
       addReminder({
         title: newTitle,
         description: newDescription,
-        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         completed: false,
         priority: 'medium',
       })
@@ -81,11 +81,10 @@ export default function RemindersPage() {
           <button
             key={tab}
             onClick={() => setFilter(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              filter === tab
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === tab
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
             {tab === 'all' && ` (${reminders.length})`}
@@ -131,13 +130,12 @@ export default function RemindersPage() {
                         <Calendar className="w-4 h-4" />
                         {new Date(reminder.dueDate).toLocaleDateString()}
                       </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        reminder.priority === 'high'
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${reminder.priority === 'high'
                           ? 'bg-destructive/10 text-destructive'
                           : reminder.priority === 'medium'
-                          ? 'bg-accent/10 text-accent'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
+                            ? 'bg-accent/10 text-accent'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
                         {reminder.priority}
                       </span>
                     </div>
