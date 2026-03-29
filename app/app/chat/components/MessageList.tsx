@@ -1,5 +1,4 @@
 import { User, Bot, Loader2 } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { format } from 'date-fns'
 import { useRef, useEffect } from 'react'
 import { SuggestionCard } from './SuggestionCard'
@@ -15,38 +14,48 @@ interface Message {
 interface MessageListProps {
     messages: Message[]
     isLoading: boolean
+    onExecuteSuggestion: (suggestion: string, data: any) => void
 }
 
-export function MessageList({ messages, isLoading }: MessageListProps) {
+export function MessageList({ messages, isLoading, onExecuteSuggestion }: MessageListProps) {
     const scrollRef = useRef<HTMLDivElement>(null)
+    const listRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+        }
+    }, [messages, isLoading])
 
     return (
-        <ScrollArea className="flex-1 p-6">
-            <div className="space-y-6 max-w-3xl mx-auto">
+        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-accent/20 hover:scrollbar-thumb-accent/40 p-6 space-y-6">
+            <div className="max-w-3xl mx-auto space-y-6 pb-4">
+                {messages.length === 0 && !isLoading && (
+                    <div className="text-center text-muted-foreground/30 py-20 italic text-sm">
+                        No messages yet. Ask MindNote anything about your data.
+                    </div>
+                )}
+
                 {messages.map((msg, i) => (
                     <div
                         key={i}
-                        className={`flex items-start gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                        className={`flex items-start gap-4 ${msg.role === 'user' ? 'flex-row-reverse animate-in slide-in-from-right-3 duration-500' : 'animate-in slide-in-from-left-3 duration-500'}`}
                     >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'user' ? 'bg-primary' : 'bg-accent'
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ${msg.role === 'user' ? 'bg-primary' : 'bg-accent'
                             }`}>
                             {msg.role === 'user'
-                                ? <User className="w-4 h-4 text-primary-foreground" />
-                                : <Bot className="w-4 h-4 text-accent-foreground" />
+                                ? <User className="w-5 h-5 text-primary-foreground" />
+                                : <Bot className="w-5 h-5 text-accent-foreground" />
                             }
                         </div>
-                        <div className={`space-y-2 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                            <div className={`p-4 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.role === 'user'
-                                    ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                    : 'bg-card border border-accent/10 rounded-tl-none'
+                        <div className={`space-y-2 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            <div className={`p-4 rounded-2xl shadow-lg text-[15px] leading-relaxed tracking-tight ${msg.role === 'user'
+                                ? 'bg-primary text-primary-foreground rounded-tr-none'
+                                : 'bg-card border border-accent/20 rounded-tl-none font-medium text-foreground'
                                 }`}>
                                 {msg.content}
                             </div>
-                            <span className="text-[10px] text-muted-foreground/60 px-2 flex items-center gap-1">
+                            <span className={`text-[10px] text-muted-foreground/50 px-2 flex items-center gap-1 font-bold tracking-widest ${msg.role === 'user' ? 'justify-end' : ''}`}>
                                 {msg.timestamp && format(new Date(msg.timestamp), 'h:mm a')}
                             </span>
 
@@ -54,6 +63,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
                                 <SuggestionCard
                                     suggestion={msg.suggestion}
                                     suggestionData={msg.suggestion_data}
+                                    onExecute={onExecuteSuggestion}
                                 />
                             )}
                         </div>
@@ -62,17 +72,22 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
 
                 {isLoading && (
                     <div className="flex items-start gap-4">
-                        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-                            <Bot className="w-4 h-4 text-accent-foreground" />
+                        <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center shadow-lg">
+                            <Bot className="w-5 h-5 text-accent-foreground" />
                         </div>
-                        <div className="bg-card border border-accent/10 p-4 rounded-2xl rounded-tl-none shadow-sm">
-                            <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                        <div className="bg-card border border-accent/20 p-4 rounded-2xl rounded-tl-none shadow-lg">
+                            <div className="flex gap-1.5 items-center h-5 px-1">
+                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce"></span>
+                            </div>
                         </div>
                     </div>
                 )}
 
-                <div ref={scrollRef} />
+                {/* Anchor for scrollIntoView */}
+                <div ref={scrollRef} className="h-4 w-full invisible" />
             </div>
-        </ScrollArea>
+        </div>
     )
 }

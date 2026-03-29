@@ -16,6 +16,12 @@ export default function RemindersPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all')
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [newDueDate, setNewDueDate] = useState<string>(() => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(9, 0, 0, 0)
+    return tomorrow.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:mm"
+  })
 
   const filteredReminders = reminders.filter((reminder) => {
     if (filter === 'active') return !reminder.completed
@@ -28,7 +34,7 @@ export default function RemindersPage() {
       addReminder({
         title: newTitle,
         description: newDescription,
-        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        dueDate: new Date(newDueDate).toISOString(),
         completed: false,
         priority: 'medium',
       })
@@ -53,27 +59,59 @@ export default function RemindersPage() {
       </div>
 
       {/* New Reminder Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Reminder</CardTitle>
+      <Card className="border-2 border-primary/50 shadow-xl">
+        <CardHeader className="bg-primary/5">
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Create New Reminder (Force Updated)
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            placeholder="Reminder title..."
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddReminder()}
-            disabled={isLoading}
-          />
-          <Input
-            placeholder="Description (optional)"
-            value={newDescription}
-            onChange={(e) => setNewDescription(e.target.value)}
-            disabled={isLoading}
-          />
-          <Button onClick={handleAddReminder} className="w-full gap-2" disabled={isLoading || !newTitle.trim()}>
-            <Plus className="w-4 h-4" />
-            {isLoading ? 'Processing...' : 'Add Reminder'}
+        <CardContent className="space-y-6 pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col space-y-2">
+              <label className="text-xs font-black uppercase text-foreground/70">1. Set Deadline (Date & Time)</label>
+              <div className="flex gap-2">
+                <Input
+                  type="datetime-local"
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  disabled={isLoading}
+                  className="border-2 border-primary/30 h-12 text-lg font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <label className="text-xs font-black uppercase text-foreground/70">2. Reminder Title</label>
+              <Input
+                placeholder="What needs to be done?"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddReminder()}
+                disabled={isLoading}
+                className="h-12"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col space-y-2">
+            <label className="text-xs font-black uppercase text-foreground/70">3. Description (Extra Context)</label>
+            <Input
+              placeholder="Add some details..."
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+              disabled={isLoading}
+              className="h-12"
+            />
+          </div>
+
+          <Button
+            onClick={handleAddReminder}
+            className="w-full h-14 text-lg font-black gap-2 shadow-lg hover:scale-[1.01] transition-transform"
+            disabled={isLoading || !newTitle.trim()}
+          >
+            <Plus className="w-6 h-6" />
+            {isLoading ? 'CREATING...' : 'SAVE REMINDER'}
           </Button>
         </CardContent>
       </Card>
@@ -129,15 +167,19 @@ export default function RemindersPage() {
                     {reminder.description && (
                       <p className="text-sm text-muted-foreground mt-1">{reminder.description}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1.5 rounded-full font-bold">
                         <Calendar className="w-4 h-4" />
                         {new Date(reminder.dueDate).toLocaleDateString()}
                       </span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${reminder.priority === 'high'
-                        ? 'bg-destructive/10 text-destructive'
+                      <span className="flex items-center gap-1 bg-accent/10 text-accent px-3 py-1.5 rounded-full font-bold">
+                        <Clock className="w-4 h-4" />
+                        {new Date(reminder.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-tighter shadow-sm ${reminder.priority === 'high'
+                        ? 'bg-destructive/20 text-destructive border border-destructive/30'
                         : reminder.priority === 'medium'
-                          ? 'bg-accent/10 text-accent'
+                          ? 'bg-accent/20 text-accent border border-accent/30'
                           : 'bg-muted text-muted-foreground'
                         }`}>
                         {reminder.priority}
@@ -161,3 +203,4 @@ export default function RemindersPage() {
     </div>
   )
 }
+
