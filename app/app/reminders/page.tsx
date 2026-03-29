@@ -9,6 +9,7 @@ import { Plus, CheckCircle2, Circle, Clock, Trash2, Calendar } from 'lucide-reac
 
 export default function RemindersPage() {
   const reminders = useAppStore((state) => state.reminders)
+  const isLoading = useAppStore((state) => state.isLoading)
   const updateReminder = useAppStore((state) => state.updateReminder)
   const deleteReminder = useAppStore((state) => state.deleteReminder)
   const addReminder = useAppStore((state) => state.addReminder)
@@ -61,16 +62,18 @@ export default function RemindersPage() {
             placeholder="Reminder title..."
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddReminder()}
+            onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddReminder()}
+            disabled={isLoading}
           />
           <Input
             placeholder="Description (optional)"
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
+            disabled={isLoading}
           />
-          <Button onClick={handleAddReminder} className="w-full gap-2">
+          <Button onClick={handleAddReminder} className="w-full gap-2" disabled={isLoading || !newTitle.trim()}>
             <Plus className="w-4 h-4" />
-            Add Reminder
+            {isLoading ? 'Processing...' : 'Add Reminder'}
           </Button>
         </CardContent>
       </Card>
@@ -82,8 +85,8 @@ export default function RemindersPage() {
             key={tab}
             onClick={() => setFilter(tab)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -110,6 +113,7 @@ export default function RemindersPage() {
                   <button
                     onClick={() => handleToggleComplete(reminder.id)}
                     className="flex-shrink-0 mt-1"
+                    disabled={isLoading}
                   >
                     {reminder.completed ? (
                       <CheckCircle2 className="w-6 h-6 text-primary" />
@@ -131,10 +135,10 @@ export default function RemindersPage() {
                         {new Date(reminder.dueDate).toLocaleDateString()}
                       </span>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${reminder.priority === 'high'
-                          ? 'bg-destructive/10 text-destructive'
-                          : reminder.priority === 'medium'
-                            ? 'bg-accent/10 text-accent'
-                            : 'bg-muted text-muted-foreground'
+                        ? 'bg-destructive/10 text-destructive'
+                        : reminder.priority === 'medium'
+                          ? 'bg-accent/10 text-accent'
+                          : 'bg-muted text-muted-foreground'
                         }`}>
                         {reminder.priority}
                       </span>
@@ -143,7 +147,8 @@ export default function RemindersPage() {
 
                   <button
                     onClick={() => deleteReminder(reminder.id)}
-                    className="flex-shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                    className="flex-shrink-0 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                    disabled={isLoading}
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>

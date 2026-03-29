@@ -61,6 +61,45 @@ interface AppStore {
   deleteTodo: (id: string) => Promise<void>
 }
 
+// ── Mappers ─────────────────────────────────────────────────────
+
+const mapNote = (n: any): Note => ({
+  id: n.id,
+  title: n.title,
+  content: n.content,
+  tags: n.tags || [],
+  createdAt: n.created_at,
+  updatedAt: n.updated_at
+})
+
+const mapReminder = (r: any): Reminder => ({
+  id: r.id,
+  title: r.title,
+  description: r.description,
+  dueDate: r.due_date,
+  completed: r.completed,
+  priority: r.priority
+})
+
+const mapTodo = (t: any): Todo => ({
+  id: t.id,
+  title: t.title,
+  description: t.description,
+  status: t.status,
+  priority: t.priority,
+  boardId: t.board_id
+})
+
+// Reverse mappers for sending data back to API
+const toSnake = (obj: any) => {
+  const result: any = {}
+  for (const key in obj) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+    result[snakeKey] = obj[key]
+  }
+  return result
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
   // Navigation
   sidebarOpen: true,
@@ -86,60 +125,100 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectedNoteId: null,
   setSelectedNoteId: (id) => set({ selectedNoteId: id }),
   fetchNotes: async () => {
-    const data = await api.get<Note[]>('/writer/notes')
-    set({ notes: data })
+    const data = await api.get<any[]>('/writer/notes')
+    set({ notes: data.map(mapNote) })
     if (data.length > 0 && !get().selectedNoteId) {
       set({ selectedNoteId: data[0].id })
     }
   },
   addNote: async (note) => {
-    await api.post('/writer/notes', note)
-    await get().fetchNotes()
+    set({ isLoading: true })
+    try {
+      await api.post('/writer/notes', toSnake(note))
+      await get().fetchNotes()
+    } finally {
+      set({ isLoading: false })
+    }
   },
   updateNote: async (id, updates) => {
-    await api.patch(`/writer/notes/${id}`, updates)
+    await api.patch(`/writer/notes/${id}`, toSnake(updates))
     await get().fetchNotes()
   },
   deleteNote: async (id) => {
-    await api.delete(`/writer/notes/${id}`)
-    await get().fetchNotes()
+    set({ isLoading: true })
+    try {
+      await api.delete(`/writer/notes/${id}`)
+      await get().fetchNotes()
+    } finally {
+      set({ isLoading: false })
+    }
   },
 
   // Reminders
   reminders: [],
   fetchReminders: async () => {
-    const data = await api.get<Reminder[]>('/writer/reminders')
-    set({ reminders: data })
+    const data = await api.get<any[]>('/writer/reminders')
+    set({ reminders: data.map(mapReminder) })
   },
   addReminder: async (reminder) => {
-    await api.post('/writer/reminders', reminder)
-    await get().fetchReminders()
+    set({ isLoading: true })
+    try {
+      await api.post('/writer/reminders', toSnake(reminder))
+      await get().fetchReminders()
+    } finally {
+      set({ isLoading: false })
+    }
   },
   updateReminder: async (id, updates) => {
-    await api.patch(`/writer/reminders/${id}`, updates)
-    await get().fetchReminders()
+    set({ isLoading: true })
+    try {
+      await api.patch(`/writer/reminders/${id}`, toSnake(updates))
+      await get().fetchReminders()
+    } finally {
+      set({ isLoading: false })
+    }
   },
   deleteReminder: async (id) => {
-    await api.delete(`/writer/reminders/${id}`)
-    await get().fetchReminders()
+    set({ isLoading: true })
+    try {
+      await api.delete(`/writer/reminders/${id}`)
+      await get().fetchReminders()
+    } finally {
+      set({ isLoading: false })
+    }
   },
 
   // Todos
   todos: [],
   fetchTodos: async () => {
-    const data = await api.get<Todo[]>('/writer/todos')
-    set({ todos: data })
+    const data = await api.get<any[]>('/writer/todos')
+    set({ todos: data.map(mapTodo) })
   },
   addTodo: async (todo) => {
-    await api.post('/writer/todos', todo)
-    await get().fetchTodos()
+    set({ isLoading: true })
+    try {
+      await api.post('/writer/todos', toSnake(todo))
+      await get().fetchTodos()
+    } finally {
+      set({ isLoading: false })
+    }
   },
   updateTodo: async (id, updates) => {
-    await api.patch(`/writer/todos/${id}`, updates)
-    await get().fetchTodos()
+    set({ isLoading: true })
+    try {
+      await api.patch(`/writer/todos/${id}`, toSnake(updates))
+      await get().fetchTodos()
+    } finally {
+      set({ isLoading: false })
+    }
   },
   deleteTodo: async (id) => {
-    await api.delete(`/writer/todos/${id}`)
-    await get().fetchTodos()
+    set({ isLoading: true })
+    try {
+      await api.delete(`/writer/todos/${id}`)
+      await get().fetchTodos()
+    } finally {
+      set({ isLoading: false })
+    }
   },
 }))

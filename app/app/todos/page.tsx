@@ -11,6 +11,7 @@ type Status = 'todo' | 'in-progress' | 'done'
 
 export default function TodosPage() {
   const todos = useAppStore((state) => state.todos)
+  const isLoading = useAppStore((state) => state.isLoading)
   const updateTodo = useAppStore((state) => state.updateTodo)
   const deleteTodo = useAppStore((state) => state.deleteTodo)
   const addTodo = useAppStore((state) => state.addTodo)
@@ -24,8 +25,8 @@ export default function TodosPage() {
     return status === 'todo'
       ? 'bg-muted'
       : status === 'in-progress'
-      ? 'bg-accent/10 border-accent/30'
-      : 'bg-chart-3/10 border-chart-3/30'
+        ? 'bg-accent/10 border-accent/30'
+        : 'bg-chart-3/10 border-chart-3/30'
   }
 
   const handleAddTodo = () => {
@@ -78,18 +79,27 @@ export default function TodosPage() {
           placeholder="Add a new task..."
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleAddTodo()}
+          onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddTodo()}
+          disabled={isLoading}
         />
-        <Button onClick={handleAddTodo} className="gap-2">
+        <Button onClick={handleAddTodo} className="gap-2" disabled={isLoading || !newTitle.trim()}>
           <Plus className="w-4 h-4" />
-          Add Task
+          {isLoading ? 'Processing...' : 'Add Task'}
         </Button>
       </div>
 
       {/* Kanban Board */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {statuses.map((status) => (
-          <div key={status} className="space-y-4">
+          <div
+            key={status}
+            className="space-y-4"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              const todoId = e.dataTransfer.getData('todoId')
+              if (todoId) handleStatusChange(todoId, status)
+            }}
+          >
             {/* Column Header */}
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-foreground">{getStatusLabel(status)}</h2>
@@ -108,7 +118,9 @@ export default function TodosPage() {
                 grouped[status].map((todo) => (
                   <Card
                     key={todo.id}
-                    className={`cursor-move hover:shadow-md transition-shadow border ${getStatusColor(status)}`}
+                    draggable={!isLoading}
+                    onDragStart={(e) => e.dataTransfer.setData('todoId', todo.id)}
+                    className={`cursor-move hover:shadow-md transition-shadow border ${getStatusColor(status)} ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
@@ -118,41 +130,51 @@ export default function TodosPage() {
                           {todo.description && (
                             <p className="text-xs text-muted-foreground mt-1">{todo.description}</p>
                           )}
-                          <div className="flex items-center gap-2 mt-3">
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
+                            {/* Current Status Badge */}
+                            <span className={`text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border ${status === 'todo' ? 'bg-muted/50 border-border text-muted-foreground' :
+                                status === 'in-progress' ? 'bg-accent/10 border-accent/20 text-accent' :
+                                  'bg-chart-3/10 border-chart-3/20 text-chart-3'
+                              }`}>
+                              {getStatusLabel(status)}
+                            </span>
+
                             {status !== 'done' && (
-                              <>
+                              <div className="flex gap-1 ml-auto">
                                 {status === 'todo' && (
                                   <button
                                     onClick={() => handleStatusChange(todo.id, 'in-progress')}
-                                    className="text-xs px-2 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20"
+                                    className="text-xs px-2 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-50 transition-colors"
+                                    disabled={isLoading}
                                   >
-                                    Start
+                                    Start Task
                                   </button>
                                 )}
                                 {status === 'in-progress' && (
                                   <button
                                     onClick={() => handleStatusChange(todo.id, 'done')}
-                                    className="text-xs px-2 py-1 rounded bg-chart-3/10 text-chart-3 hover:bg-chart-3/20"
+                                    className="text-xs px-2 py-1 rounded bg-chart-3/10 text-chart-3 hover:bg-chart-3/20 disabled:opacity-50 transition-colors"
+                                    disabled={isLoading}
                                   >
-                                    Complete
+                                    Finish Task
                                   </button>
                                 )}
-                              </>
+                              </div>
                             )}
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${
-                              todo.priority === 'high'
-                                ? 'bg-destructive/10 text-destructive'
-                                : todo.priority === 'medium'
+                            <span className={`text-xs font-medium px-2 py-1 rounded ml-auto ${todo.priority === 'high'
+                              ? 'bg-destructive/10 text-destructive'
+                              : todo.priority === 'medium'
                                 ? 'bg-accent/10 text-accent'
                                 : 'bg-muted text-muted-foreground'
-                            }`}>
+                              }`}>
                               {todo.priority}
                             </span>
                           </div>
                         </div>
                         <button
                           onClick={() => deleteTodo(todo.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                          className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0 disabled:opacity-50"
+                          disabled={isLoading}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

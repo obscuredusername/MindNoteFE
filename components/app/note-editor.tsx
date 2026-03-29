@@ -19,25 +19,36 @@ export function NoteEditor() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
 
+  // 1. Sync local state when a new note is selected
   useEffect(() => {
     if (selectedNote) {
       setTitle(selectedNote.title)
       setContent(selectedNote.content)
     }
-  }, [selectedNote])
+  }, [selectedNoteId]) // Only re-sync when the selected ID changes
+
+  // 2. Debounced Auto-save Logic
+  useEffect(() => {
+    if (!selectedNote) return
+
+    // Don't save if nothing changed since last store update
+    if (title === selectedNote.title && content === selectedNote.content) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      updateNote(selectedNote.id, { title, content })
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [title, content, selectedNoteId])
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle)
-    if (selectedNote) {
-      updateNote(selectedNote.id, { title: newTitle })
-    }
   }
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent)
-    if (selectedNote) {
-      updateNote(selectedNote.id, { content: newContent })
-    }
   }
 
   const handleDelete = () => {

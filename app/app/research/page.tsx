@@ -4,39 +4,29 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Textarea } from '@/components/ui/textarea'
-import { Lightbulb, Send, Sparkles } from 'lucide-react'
+import { Lightbulb, Send, Sparkles, Loader2 } from 'lucide-react'
+import { aiService, type ResearchResult } from '@/services/ai.service'
 
 export default function ResearchPage() {
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState<{ title: string; content: string }[]>([])
+  const [results, setResults] = useState<ResearchResult[]>([])
+  const [hasSearched, setHasSearched] = useState(false)
 
   const handleSearch = async () => {
     if (!query.trim()) return
 
     setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setResults([
-        {
-          title: 'Understanding AI and Machine Learning',
-          content:
-            'Machine learning is a subset of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed. It focuses on the development of algorithms and statistical models that computers use to perform specific tasks.',
-        },
-        {
-          title: 'Deep Learning Fundamentals',
-          content:
-            'Deep learning is a specialized subset of machine learning that uses artificial neural networks with multiple layers (hence "deep") to progressively extract higher-level features from raw input.',
-        },
-        {
-          title: 'Natural Language Processing',
-          content:
-            'NLP is a branch of AI that helps computers understand, interpret, and generate human language in a meaningful and useful way. It combines computational linguistics and machine learning to process text and speech.',
-        },
-      ])
+    setHasSearched(true)
+    try {
+      const data = await aiService.research(query)
+      setResults(data)
+    } catch (error) {
+      console.error('Research error:', error)
+      setResults([])
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -61,12 +51,12 @@ export default function ResearchPage() {
             placeholder="What would you like to research? (e.g., 'AI trends in 2024')"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           />
-          <Button onClick={handleSearch} disabled={isLoading} className="w-full gap-2">
+          <Button onClick={handleSearch} disabled={isLoading || !query.trim()} className="w-full gap-2">
             {isLoading ? (
               <>
-                <Sparkles className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Researching...
               </>
             ) : (
@@ -101,8 +91,8 @@ export default function ResearchPage() {
         </div>
       )}
 
-      {/* Empty State */}
-      {query && results.length === 0 && !isLoading && (
+      {/* No Results */}
+      {hasSearched && results.length === 0 && !isLoading && (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
             <p>No results found. Try a different query.</p>
@@ -110,7 +100,8 @@ export default function ResearchPage() {
         </Card>
       )}
 
-      {!query && (
+      {/* Empty State */}
+      {!hasSearched && (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center space-y-4">

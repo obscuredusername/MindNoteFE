@@ -5,15 +5,11 @@ import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/lib/app-store'
 import { BookOpen, Clock, CheckSquare, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useMounted } from '@/hooks/use-mounted'
 
 export function RecentNotesWidget() {
   const notes = useAppStore((state) => state.notes).slice(0, 3)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   return (
     <Card>
@@ -47,11 +43,7 @@ export function RemindersWidget() {
   const reminders = useAppStore((state) => state.reminders)
     .filter((r) => !r.completed)
     .slice(0, 3)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useMounted()
 
   return (
     <Card>
@@ -68,13 +60,12 @@ export function RemindersWidget() {
             <div key={reminder.id} className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
               <div className="flex items-start justify-between">
                 <p className="font-medium text-sm text-foreground">{reminder.title}</p>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  reminder.priority === 'high'
+                <span className={`text-xs px-2 py-1 rounded ${reminder.priority === 'high'
                     ? 'bg-destructive/10 text-destructive'
                     : reminder.priority === 'medium'
-                    ? 'bg-accent/10 text-accent'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
+                      ? 'bg-accent/10 text-accent'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
                   {reminder.priority}
                 </span>
               </div>
@@ -109,11 +100,10 @@ export function TodosWidget() {
         <div className="space-y-3">
           {todos.map((todo) => (
             <div key={todo.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
-              <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                todo.status === 'done'
+              <div className={`w-4 h-4 rounded border flex items-center justify-center ${todo.status === 'done'
                   ? 'bg-primary border-primary'
                   : 'border-border'
-              }`}>
+                }`}>
                 {todo.status === 'done' && <span className="text-xs text-primary-foreground">✓</span>}
               </div>
               <p className={`text-sm ${todo.status === 'done' ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
