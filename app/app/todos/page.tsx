@@ -54,6 +54,18 @@ export default function TodosPage() {
     todos.forEach((todo) => {
       grouped[todo.status].push(todo)
     })
+
+    // Sort tasks by priority (high > medium > low), then by orderIndex (newest > oldest positioning)
+    const priorityWeight = { high: 3, medium: 2, low: 1 }
+    for (const key in grouped) {
+      grouped[key as Status].sort((a, b) => {
+        if (priorityWeight[b.priority] !== priorityWeight[a.priority]) {
+          return priorityWeight[b.priority] - priorityWeight[a.priority]
+        }
+        return b.orderIndex - a.orderIndex
+      })
+    }
+
     return grouped
   }
 
@@ -120,6 +132,30 @@ export default function TodosPage() {
                     key={todo.id}
                     draggable={!isLoading}
                     onDragStart={(e) => e.dataTransfer.setData('todoId', todo.id)}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation() // Prevent column-level drop
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      const draggedId = e.dataTransfer.getData('todoId')
+                      if (draggedId && draggedId !== todo.id) {
+                        const listWithoutDragged = grouped[status].filter(t => t.id !== draggedId)
+                        const newTargetIndex = listWithoutDragged.findIndex(t => t.id === todo.id)
+
+                        let newOrderIndex = todo.orderIndex + 1.0
+                        if (newTargetIndex > 0) {
+                          const actualAboveTask = listWithoutDragged[newTargetIndex - 1]
+                          // Only average if they are in the exact same priority group
+                          if (actualAboveTask.priority === todo.priority) {
+                            newOrderIndex = (todo.orderIndex + actualAboveTask.orderIndex) / 2.0
+                          }
+                        }
+
+                        updateTodo(draggedId, { status: status, priority: todo.priority, orderIndex: newOrderIndex })
+                      }
+                    }}
                     className={`cursor-move hover:shadow-md transition-shadow border ${getStatusColor(status)} ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}
                   >
                     <CardContent className="p-4">
@@ -133,8 +169,8 @@ export default function TodosPage() {
                           <div className="flex items-center gap-2 mt-3 flex-wrap">
                             {/* Current Status Badge */}
                             <span className={`text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border ${status === 'todo' ? 'bg-muted/50 border-border text-muted-foreground' :
-                                status === 'in-progress' ? 'bg-accent/10 border-accent/20 text-accent' :
-                                  'bg-chart-3/10 border-chart-3/20 text-chart-3'
+                              status === 'in-progress' ? 'bg-accent/10 border-accent/20 text-accent' :
+                                'bg-chart-3/10 border-chart-3/20 text-chart-3'
                               }`}>
                               {getStatusLabel(status)}
                             </span>

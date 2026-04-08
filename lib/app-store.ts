@@ -25,6 +25,7 @@ export interface Todo {
   description?: string
   status: 'todo' | 'in-progress' | 'done'
   priority: 'low' | 'medium' | 'high'
+  orderIndex: number
   boardId: string
 }
 
@@ -87,6 +88,7 @@ const mapTodo = (t: any): Todo => ({
   description: t.description,
   status: t.status,
   priority: t.priority,
+  orderIndex: t.order_index ?? 0.0,
   boardId: t.board_id
 })
 

@@ -1,14 +1,17 @@
 'use client'
 
+import { useState } from 'react'
 import { useAuthStore } from '@/lib/auth-store'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, Mic, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
+import { CaptureThoughtsModal } from '@/components/app/capture-thoughts-modal'
 
 export function Header() {
   const user = useAuthStore((state) => state.user)
+  const [captureOpen, setCaptureOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-md">
@@ -27,12 +30,10 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <Link href="/app/chat">
-            <Button variant="ghost" className="gap-2 text-accent font-bold hover:bg-accent/10 hover:text-accent px-3 transition-all rounded-full flex">
-              <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Ask AI</span>
-            </Button>
-          </Link>
+          <Button onClick={() => setCaptureOpen(true)} variant="ghost" className="gap-2 text-accent font-bold hover:bg-accent/10 hover:text-accent px-3 transition-all rounded-full flex">
+            <MessageCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Ask AI</span>
+          </Button>
 
           <Button variant="outline" size="icon" className="rounded-full h-9 w-9 border-accent/20 hover:border-accent group">
             <Mic className="w-4 h-4 group-hover:text-accent" />
@@ -51,6 +52,7 @@ export function Header() {
           </div>
         </div>
       </div>
+      <CaptureThoughtsModal open={captureOpen} onOpenChange={setCaptureOpen} />
     </header>
   )
 }
