@@ -16,6 +16,7 @@ export default function TodosPage() {
   const deleteTodo = useAppStore((state) => state.deleteTodo)
   const addTodo = useAppStore((state) => state.addTodo)
   const [newTitle, setNewTitle] = useState('')
+  const [newDueDate, setNewDueDate] = useState<string>('')
 
   const getStatusLabel = (status: Status) => {
     return status === 'todo' ? 'To Do' : status === 'in-progress' ? 'In Progress' : 'Done'
@@ -31,13 +32,23 @@ export default function TodosPage() {
 
   const handleAddTodo = () => {
     if (newTitle.trim()) {
+      let finalDueDate = undefined
+      if (newDueDate) {
+        // Correctly anchor the date string to local midnight
+        // newDueDate is "YYYY-MM-DD"
+        const [year, month, day] = newDueDate.split('-').map(Number)
+        finalDueDate = new Date(year, month - 1, day).toISOString()
+      }
+
       addTodo({
         title: newTitle,
         status: 'todo',
         priority: 'medium',
         boardId: 'default',
+        dueDate: finalDueDate,
       })
       setNewTitle('')
+      setNewDueDate('')
     }
   }
 
@@ -86,13 +97,21 @@ export default function TodosPage() {
       </div>
 
       {/* New Task Input */}
-      <div className="flex gap-2">
+      <div className="flex flex-col md:flex-row gap-2">
         <Input
           placeholder="Add a new task..."
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleAddTodo()}
           disabled={isLoading}
+          className="flex-1"
+        />
+        <Input
+          type="date"
+          value={newDueDate}
+          onChange={(e) => setNewDueDate(e.target.value)}
+          disabled={isLoading}
+          className="w-full md:w-auto"
         />
         <Button onClick={handleAddTodo} className="gap-2" disabled={isLoading || !newTitle.trim()}>
           <Plus className="w-4 h-4" />

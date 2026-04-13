@@ -10,6 +10,7 @@ import {
   BookOpen,
   Clock,
   CheckSquare,
+  Calendar as CalendarIcon,
   Search,
   Lightbulb,
   MessageCircle,
@@ -22,6 +23,7 @@ import {
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/app/dashboard' },
   { icon: BookOpen, label: 'Notes', href: '/app/notes' },
+  { icon: CalendarIcon, label: 'Calendar', href: '/app/calendar' },
   { icon: Clock, label: 'Reminders', href: '/app/reminders' },
   { icon: CheckSquare, label: 'Todos', href: '/app/todos' },
   { icon: MessageCircle, label: 'Chat', href: '/app/chat' },

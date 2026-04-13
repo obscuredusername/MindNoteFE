@@ -16,6 +16,7 @@ export interface Reminder {
   description: string
   dueDate: string
   completed: boolean
+  notified: boolean
   priority: 'low' | 'medium' | 'high'
 }
 
@@ -25,6 +26,7 @@ export interface Todo {
   description?: string
   status: 'todo' | 'in-progress' | 'done'
   priority: 'low' | 'medium' | 'high'
+  dueDate?: string
   orderIndex: number
   boardId: string
 }
@@ -79,6 +81,7 @@ const mapReminder = (r: any): Reminder => ({
   description: r.description,
   dueDate: r.due_date,
   completed: r.completed,
+  notified: r.notified,
   priority: r.priority
 })
 
@@ -88,6 +91,7 @@ const mapTodo = (t: any): Todo => ({
   description: t.description,
   status: t.status,
   priority: t.priority,
+  dueDate: t.due_date,
   orderIndex: t.order_index ?? 0.0,
   boardId: t.board_id
 })

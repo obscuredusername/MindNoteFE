@@ -20,7 +20,15 @@ export default function RemindersPage() {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 1)
     tomorrow.setHours(9, 0, 0, 0)
-    return tomorrow.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:mm"
+
+    // Format to local ISO string for datetime-local input
+    // YYYY-MM-DDTHH:mm
+    const year = tomorrow.getFullYear()
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0')
+    const day = String(tomorrow.getDate()).padStart(2, '0')
+    const hours = String(tomorrow.getHours()).padStart(2, '0')
+    const minutes = String(tomorrow.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
   })
 
   const filteredReminders = reminders.filter((reminder) => {
